@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "hardhat/console.sol";
 
 contract CollegeERP is Ownable {
     constructor() Ownable(msg.sender) {
@@ -76,13 +77,24 @@ contract CollegeERP is Ownable {
         
         student.enrolledSubjects.push(subject);
         faculty.studentsPerSubject[subject]++;
+        console.log("Student enrolled in subject: ", subject, student.studentAddress);
         emit StudentEnrolled(studentAddress, subject);
+
+    }
+    function isEnrolled(address studentAddress, string memory subject) internal view returns (bool) {
+        string[] memory subjects = studentDetails[studentAddress].enrolledSubjects;
+        for (uint256 i = 0; i < subjects.length; i++) {
+            if (keccak256(abi.encodePacked(subjects[i])) == keccak256(abi.encodePacked(subject))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Faculty functions
     function updateMarks(address studentAddress, string memory subject, uint256 marks) external onlyFaculty {
         require(subjectToFaculty[subject] == msg.sender, "Not authorized for this subject");
-        require(studentDetails[studentAddress].marks[subject] != 0, "Student not enrolled in subject");
+        require(isEnrolled(studentAddress, subject), "Student not enrolled in subject");
         
         studentDetails[studentAddress].marks[subject] = marks;
         emit MarksUpdated(msg.sender, studentAddress, subject, marks);
@@ -100,11 +112,9 @@ contract CollegeERP is Ownable {
         name = student.name;
         studentAddress = student.studentAddress;
         branch = student.branch;
-        
         uint256 length = student.enrolledSubjects.length;
         subjects = new string[](length);
         marks = new uint256[](length);
-        
         for(uint256 i = 0; i < length; i++) {
             subjects[i] = student.enrolledSubjects[i];
             marks[i] = student.marks[subjects[i]];
