@@ -17,6 +17,7 @@ import {
 import Home from './pages/Home';
 import Admin from './pages/Admin';
 import Faculty from './pages/Faculty';
+import Student from './pages/Student';
 export const MyContext = React.createContext();
 function App() {
   const init = async () => {
@@ -36,6 +37,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/faculty" element={<Faculty />} />
+          <Route path="/student" element={<Student />} />
         </Routes>
       </Router>
     </MyContext.Provider>
