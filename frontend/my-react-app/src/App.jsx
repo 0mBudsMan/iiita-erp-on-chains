@@ -15,6 +15,8 @@ import {
   Outlet,
 } from "react-router-dom";
 import Home from './pages/Home';
+import Admin from './pages/Admin';
+import Faculty from './pages/Faculty';
 export const MyContext = React.createContext();
 function App() {
   const init = async () => {
@@ -32,6 +34,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/faculty" element={<Faculty />} />
         </Routes>
       </Router>
     </MyContext.Provider>
