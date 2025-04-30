@@ -92,6 +92,7 @@ const Home = () => {
           <legend align="center">
             <i className="fa fa-lock fa-fw Disabled" /> 2FA Login here
           </legend>
+          <p>Contract Owner: {owner || "Loading..."}</p>
           <i className="fa fa-user fa-fw fa-bounce" />
           <select id="roleSelect" style={{"padding":"5px","margin-top":"10px"}}>
             <option value>-- Select Role --</option>
