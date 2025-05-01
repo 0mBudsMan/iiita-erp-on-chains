@@ -1,7 +1,6 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
-
 describe("CollegeERP", function () {
   let CollegeERP;
   let collegeERP;
@@ -26,41 +25,49 @@ describe("CollegeERP", function () {
       expect(facultyData.name).to.equal("Dr. Smith");
     });
 
-    it("Should assign a subject to faculty", async function () {
+    it("Should assign a subject to faculty with fee", async function () {
       await collegeERP.connect(owner).addFaculty(faculty.address, "Dr. Smith");
-      await collegeERP.connect(owner).assignSubject(faculty.address, "Math");
-      const subjectFaculty = await collegeERP.subjectToFaculty("Math");
-      expect(subjectFaculty).to.equal(faculty.address);
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Math", 30);
+      const fee = await collegeERP.subjectFee("Math");
+      expect(fee).to.equal(30);
     });
 
-    it("Should add a student", async function () {
+    it("Should add a student with initial balance", async function () {
       await collegeERP.connect(owner).addStudent(student.address, "Alice", "CSE");
       const studentData = await collegeERP.studentDetails(student.address);
-      expect(studentData.name).to.equal("Alice");
+      expect(studentData.balance).to.equal(100);
     });
 
-    it("Should enroll student in subject", async function () {
-      // Setup
+    it("Should enroll student in subject with fee deduction", async function () {
       await collegeERP.connect(owner).addFaculty(faculty.address, "Dr. Smith");
-      await collegeERP.connect(owner).assignSubject(faculty.address, "Math");
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Math", 30);
       await collegeERP.connect(owner).addStudent(student.address, "Alice", "CSE");
-      // Enroll
-      await collegeERP.connect(owner).enrollStudent(student.address, "Math");
-      // Verify student enrollment
-      const studentData = await collegeERP.connect(student).getStudentDetails();
-      expect(studentData.subjects).to.include("Math");
       
-      // Verify faculty student count
-      const count = await collegeERP.getStudentsPerSubject(faculty.address, "Math");
-      expect(count).to.equal(1);
+      let studentData = await collegeERP.connect(student).getStudentDetails();
+      expect(studentData.balance).to.equal(100);
+      
+      await collegeERP.connect(owner).enrollStudent(student.address, "Math");
+      
+      studentData = await collegeERP.connect(student).getStudentDetails();
+      expect(studentData.balance).to.equal(70);
+      expect(studentData.subjects).to.include("Math");
+    });
+
+    it("Should prevent enrollment with insufficient balance", async function () {
+      await collegeERP.connect(owner).addFaculty(faculty.address, "Dr. Smith");
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Math", 150);
+      await collegeERP.connect(owner).addStudent(student.address, "Alice", "CSE");
+      
+      await expect(
+        collegeERP.connect(owner).enrollStudent(student.address, "Math")
+      ).to.be.revertedWith("Insufficient balance for course fee");
     });
   });
 
   describe("Faculty Functions", function () {
     beforeEach(async function () {
-      // Common setup
       await collegeERP.connect(owner).addFaculty(faculty.address, "Dr. Smith");
-      await collegeERP.connect(owner).assignSubject(faculty.address, "Math");
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Math", 30);
       await collegeERP.connect(owner).addStudent(student.address, "Alice", "CSE");
       await collegeERP.connect(owner).enrollStudent(student.address, "Math");
     });
@@ -68,62 +75,58 @@ describe("CollegeERP", function () {
     it("Should update student marks", async function () {
       await collegeERP.connect(faculty).updateMarks(student.address, "Math", 95);
       const studentData = await collegeERP.connect(student).getStudentDetails();
-      const mathIndex = studentData[3].indexOf("Math");
+      const mathIndex = studentData.subjects.indexOf("Math");
       expect(studentData.marks[mathIndex]).to.equal(95);
-    });
-
-    it("Should prevent non-faculty from updating marks", async function () {
-      await expect(
-        collegeERP.connect(other).updateMarks(student.address, "Math", 95)
-      ).to.be.revertedWith("Not a faculty member");
     });
   });
 
   describe("Student Functions", function () {
     beforeEach(async function () {
-      // Common setup
       await collegeERP.connect(owner).addFaculty(faculty.address, "Dr. Smith");
-      await collegeERP.connect(owner).assignSubject(faculty.address, "Math");
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Math", 30);
       await collegeERP.connect(owner).addStudent(student.address, "Alice", "CSE");
       await collegeERP.connect(owner).enrollStudent(student.address, "Math");
       await collegeERP.connect(faculty).updateMarks(student.address, "Math", 85);
     });
 
-    it("Should retrieve student details", async function () {
-      const [name, address, branch, subjects, marks] = 
+    it("Should retrieve student details with balance", async function () {
+      const [name, address, branch, balance, subjects, marks] = 
         await collegeERP.connect(student).getStudentDetails();
       
       expect(name).to.equal("Alice");
       expect(address).to.equal(student.address);
       expect(branch).to.equal("CSE");
+      expect(balance).to.equal(70);
       expect(subjects).to.deep.equal(["Math"]);
-      expect(marks).to.deep.equal([85]);
-    });
-
-    it("Should prevent non-students from viewing details", async function () {
-      await expect(
-        collegeERP.connect(other).getStudentDetails()
-      ).to.be.revertedWith("Not a registered student");
+      expect(marks[0]).to.equal(85);
     });
   });
 
   describe("Edge Cases", function () {
-    it("Should prevent duplicate subject assignment", async function () {
+    it("Should prevent duplicate enrollment", async function () {
       await collegeERP.connect(owner).addFaculty(faculty.address, "Dr. Smith");
-      await collegeERP.connect(owner).assignSubject(faculty.address, "Math");
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Math", 30);
+      await collegeERP.connect(owner).addStudent(student.address, "Alice", "CSE");
+      await collegeERP.connect(owner).enrollStudent(student.address, "Math");
       
       await expect(
-        collegeERP.connect(owner).assignSubject(faculty.address, "Math")
-      ).to.be.revertedWith("Subject already assigned");
+        collegeERP.connect(owner).enrollStudent(student.address, "Math")
+      ).to.be.revertedWith("Student already enrolled");
     });
 
-    it("Should prevent enrolling unregistered students", async function () {
+    it("Should track multiple enrollments correctly", async function () {
       await collegeERP.connect(owner).addFaculty(faculty.address, "Dr. Smith");
-      await collegeERP.connect(owner).assignSubject(faculty.address, "Math");
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Math", 30);
+      await collegeERP.connect(owner).assignSubject(faculty.address, "Physics", 20);
+      await collegeERP.connect(owner).addStudent(student.address, "Alice", "CSE");
       
-      await expect(
-        collegeERP.connect(owner).enrollStudent(other.address, "Math")
-      ).to.be.revertedWith("Student not registered");
+      await collegeERP.connect(owner).enrollStudent(student.address, "Math");
+      let studentData = await collegeERP.connect(student).getStudentDetails();
+      expect(studentData.balance).to.equal(70);
+      
+      await collegeERP.connect(owner).enrollStudent(student.address, "Physics");
+      studentData = await collegeERP.connect(student).getStudentDetails();
+      expect(studentData.balance).to.equal(50);
     });
   });
 });

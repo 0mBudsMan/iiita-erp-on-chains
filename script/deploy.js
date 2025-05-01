@@ -10,7 +10,7 @@ async function main() {
   const CollegeERP = await ethers.getContractFactory("CollegeERP");
   const collegeERP = await CollegeERP.deploy();
 
-  console.log("CollegeERP contract deployed to:", collegeERP.address);
+  console.log("CollegeERP contract deployed to:", await collegeERP.getAddress());
 }
 
 // Run the deployment script

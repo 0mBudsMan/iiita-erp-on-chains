@@ -9,9 +9,11 @@ const Admin = () => {
   const [facultyAddress, setFacultyAddress] = useState("");
   const [facultyName, setFacultyName] = useState("");
 
+
   // States for assigning subject to faculty
   const [subjectFacultyAddress, setSubjectFacultyAddress] = useState("");
   const [subjectName, setSubjectName] = useState("");
+  const [subjectFee, setSubjectFee] = useState("");
 
   // States for adding student
   const [studentAddress, setStudentAddress] = useState("");
@@ -40,10 +42,13 @@ const Admin = () => {
   const handleAssignSubject = async (e) => {
     e.preventDefault();
     try {
-      await token.assignSubject(subjectFacultyAddress, subjectName);
+      // Convert fee to a number (assuming wei units)
+      const feeAsNumber = Number(subjectFee);
+      await token.assignSubject(subjectFacultyAddress, subjectName, feeAsNumber);
       alert("Subject assigned successfully");
       setSubjectFacultyAddress("");
       setSubjectName("");
+      setSubjectFee("");
     } catch (err) {
       alert("Error assigning subject");
       console.error(err);
@@ -116,33 +121,45 @@ const Admin = () => {
 
         {/* Assign Subject Form */}
         <div className="card">
-          <form className="admin-form" onSubmit={handleAssignSubject}>
-            <h2 className="card-title">Assign Subject</h2>
-            <div className="form-group">
-              <label htmlFor="subject_faculty_address">Faculty Address:</label>
-              <input
-                value={subjectFacultyAddress}
-                onChange={(e) => setSubjectFacultyAddress(e.target.value)}
-                type="text"
-                id="subject_faculty_address"
-                className="form-input"
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="subject_name">Subject Name:</label>
-              <input
-                value={subjectName}
-                onChange={(e) => setSubjectName(e.target.value)}
-                type="text"
-                id="subject_name"
-                className="form-input"
-                required
-              />
-            </div>
-            <button className="submit-button" type="submit">Assign Subject</button>
-          </form>
-        </div>
+  <form className="admin-form" onSubmit={handleAssignSubject}>
+    <h2 className="card-title">Assign Subject</h2>
+    <div className="form-group">
+      <label htmlFor="subject_faculty_address">Faculty Address:</label>
+      <input
+        value={subjectFacultyAddress}
+        onChange={(e) => setSubjectFacultyAddress(e.target.value)}
+        type="text"
+        id="subject_faculty_address"
+        className="form-input"
+        required
+      />
+    </div>
+    <div className="form-group">
+      <label htmlFor="subject_name">Subject Name:</label>
+      <input
+        value={subjectName}
+        onChange={(e) => setSubjectName(e.target.value)}
+        type="text"
+        id="subject_name"
+        className="form-input"
+        required
+      />
+    </div>
+    {/* Add Fee Input */}
+    <div className="form-group">
+      <label htmlFor="subject_fee">Course Fee:</label>
+      <input
+        value={subjectFee}
+        onChange={(e) => setSubjectFee(e.target.value)}
+        type="number"
+        id="subject_fee"
+        className="form-input"
+        required
+      />
+    </div>
+    <button className="submit-button" type="submit">Assign Subject</button>
+  </form>
+</div>
 
         {/* Add Student Form */}
         <div className="card">

@@ -16,8 +16,9 @@ const Student = () => {
             return;
         }
       const details = await token.getStudentDetails();
-      const marks = details[4];
-      const subjects = details[3];
+      
+      const marks = details[5];
+      const subjects = details[4];
       const subjectsWithMarks = subjects.map((subject, index) => ({
         subject,
         mark: marks[index].toString(), // Convert BigNumber to string
@@ -26,6 +27,7 @@ const Student = () => {
         name: details[0],
         studentAddress: details[1],
         branch: details[2],
+        balance: details[3],
         subjectsWithMarks: subjectsWithMarks,
       };
       
@@ -975,14 +977,9 @@ const Student = () => {
               </td>
             </tr>
             <tr valign="top">
-              <td nowrap="">Permanent Address</td>
+              <td nowrap="">Current Balance</td>
               <td>
-                SANTACHHAYA APARTMENT, 21 PRAHALAD PLOT, BEHIND RAJSHRI TALKIES
-                <br />
-                Rajkot - 360001 (Gujarat) INDIA (Police Station: A DIVISION
-                POLICE STATION, DHEBAR RD NEAR, TRIKON BAUG, RAJKOT, GUJARAT
-                360001
-                <sup>Urban Area</sup>)
+                {studentDetails.balance}
               </td>
             </tr>
             <tr valign="top">
